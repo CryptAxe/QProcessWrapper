@@ -12,15 +12,19 @@
 
 
 #include <QCoreApplication>
-
 #include "qprocesswrapper.h"
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
+  std::cout << "starting\n";
+  QCoreApplication a(argc, argv);
 
-    QString binaryPath = ""; // Set the binary to be launched
-    QString binaryArguments = ""; // Set the arguments for the binary
-    
-    return a.exec();
+  QString binaryPath = "/home/cryptaxe/AtomicAlpha/ATOMIC/src/cpuminer/minerd"; // Set the binary to be launched
+  QStringList binaryArguments;
+  binaryArguments.push_back("-o");
+  binaryArguments.push_back("54.77.145.190:9332");
+
+  QProcessWrapper pWrapper(binaryPath, binaryArguments);
+
+  return a.exec();
 }

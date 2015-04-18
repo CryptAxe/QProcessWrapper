@@ -1,123 +1,143 @@
 #include "qprocesswrapper.h"
 
-QProcessWrapper::QProcessWrapper(QObject *parent, QString exePath, QStringList arguments) :
-    QObject(parent)
+QProcessWrapper::QProcessWrapper(QObject *parent) :
+  QObject(parent)
 {
-    // Create the process
-    QProcess *newProcess = new QProcess(parent);
-
-    // Connect signals for QProcess
-    connect(newProcess, SIGNAL(started()), this, SLOT(processStarted()));
-    connect(newProcess, SIGNAL(error(QProcess::ProcessError)), this, SLOT(processError(QProcess::ProcessError)));
-    connect(newProcess, SIGNAL(readyReadStandardError()), this, SLOT(processReadyReadSTDerr()));
-    connect(newProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(proccessReadyReadSTDout()));
-    connect(newProcess, SIGNAL(finished(int)), this, SLOT(processFinished(int)));
-    connect(newProcess, SIGNAL(destroyed()), this, SLOT(processDestroyed()));
-
-    // Connect our signals
-    connect(this, SIGNAL(killProcess()), newProcess, SLOT(kill()));
-    connect(this, SIGNAL(deleteProcess()), newProcess, SLOT(deleteLater()));
-
-    if (arguments.at(0).isEmpty()) {
-        // No arguments
-        qDebug() << "[QProcessWrapper] Starting Process: " << exePath << endl;
-        qDebug() << "[QProcessWrapper] No arguments" << endl;
-
-        // Start the process
-        newProcess->start(exePath);
-
-    } else {
-        qDebug() << "[QProcessWrapper] Starting Process: " << exePath << endl;
-        qDebug() << "[QProcessWrapper] Arguments: " << arguments << endl;
-
-        // Start the process with arguments
-        newProcess->start(exePath, arguments);
-    }
 }
 
-QProcessWrapper::~QProcessWrapper()
+QProcessWrapper::QProcessWrapper(QString exePath, QStringList arguments, QObject *parent)
 {
+  std::cout << "[QProcessWrapper] attempting to start process\n";
 
+  // Create the process
+  QProcess *newProcess = new QProcess(parent);
+
+  // Connect signals for QProcess
+  connect(newProcess, SIGNAL(started()), this, SLOT(processStarted()));
+  connect(newProcess, SIGNAL(error(QProcess::ProcessError)), this, SLOT(processError(QProcess::ProcessError)));
+  connect(newProcess, SIGNAL(readyReadStandardError()), this, SLOT(slotReadStdErr()));
+  connect(newProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(slotReadStdOut()));
+  connect(newProcess, SIGNAL(finished(int)), this, SLOT(processFinished(int)));
+  connect(newProcess, SIGNAL(destroyed()), this, SLOT(processDestroyed()));
+  connect(this, SIGNAL(killProcess()), newProcess, SLOT(kill()));
+  connect(this, SIGNAL(deleteProcess()), newProcess, SLOT(deleteLater()));
+
+  if (arguments.isEmpty()) {
+      // No arguments
+      std::cout << "[QProcessWrapper] Starting Process: " << exePath.toStdString() << std::endl;
+      std::cout << "[QProcessWrapper] No arguments" << std::endl;
+
+      // Start the process
+      newProcess->start(exePath);
+
+    } else {
+      std::cout << "[QProcessWrapper] Starting Process: " << exePath.toStdString() << std::endl;
+      for (int i = 0; i < arguments.size(); i++) {
+          std::cout << "Argument #" << i << ": "<< arguments.at(i).toStdString() << std::endl;
+        }
+
+      // Start the process with arguments
+      newProcess->start(exePath, arguments);
+    }
 }
 
 void QProcessWrapper::processStarted()
 {
-    qDebug() << "[QProcessWrapper] Process has started! \n";
+  std::cout << "[QProcessWrapper] Process has started!\n";
 }
 
 void QProcessWrapper::processError(QProcess::ProcessError error)
 {
-    qDebug() << "[QProcessWrapper] Process ERROR!\n";
+  std::cout << "[QProcessWrapper] Process ERROR!\n";
 
-    switch (error) {
+  switch (error) {
     case QProcess::FailedToStart: {
+        std::cout << "[QProcessWrapper ERROR]: FailedToStart\n";
         break;
-    }
+      }
     case QProcess::Crashed: {
+        std::cout << "[QProcessWrapper ERROR]: Crashed\n";
         break;
-    }
+      }
     case QProcess::Timedout: {
+        std::cout << "[QProcessWrapper ERROR]: Timedout\n";
         break;
-    }
+      }
     case QProcess::WriteError: {
+        std::cout << "[QProcessWrapper ERROR]: WriteError\n";
         break;
-    }
+      }
     case QProcess::ReadError: {
+        std::cout << "[QProcessWrapper ERROR]: ReadError\n";
         break;
-    }
+      }
     case QProcess::UnknownError: {
+        std::cout << "[QProcessWrapper ERROR]: UnknownError\n";
         break;
-    }
+      }
     default:
-        break;
+      break;
     }
-
-    // Show Dialog
 }
 
-void QProcessWrapper::processReadyReadSTDerr()
+void QProcessWrapper::slotReadStdErr()
 {
-    qDebug() << "[QProcessWrapper] Ready to ready stderr\n";
+  // call helper with pointer
+  std::cout << "std err ready\n";
 }
 
-void QProcessWrapper::proccessReadyReadSTDout()
+void QProcessWrapper::slotReadStdOut()
 {
-    qDebug() << "[QProcessWrapper] Ready to ready stdout\n";
+  // call helper with pointer
+  std::cout << "std out ready\n";
+}
+
+void QProcessWrapper::processReadyReadSTDerr(QProcess &toRead)
+{
+  QString stdErr = toRead.readAllStandardError();
+  std::cout << stdErr.toStdString() << std::endl;
+}
+
+void QProcessWrapper::proccessReadyReadSTDout(QProcess &toRead)
+{
+  QString stdOut = toRead.readAllStandardOutput();
+  std::cout << stdOut.toStdString() << std::endl;
 }
 
 void QProcessWrapper::processFinished(int exitCode)
 {
-    qDebug() << "[QProcessWrapper] Process exited";
-    qDebug() << "[QProcessWrapper] Exit Code: " << exitCode << "\n";
-
-    // Show Dialog
+  std::cout << "[QProcessWrapper] Process exited";
+  std::cout << "[QProcessWrapper] Exit Code: " << exitCode << "\n";
 }
 
 void QProcessWrapper::processDestroyed()
 {
-    qDebug() << "[QProcessWrapper] Process destroyed!";
-
-    // Show Dialog
+  std::cout << "[QProcessWrapper] Process destroyed!";
 }
 
 void QProcessWrapper::processStateChanged(QProcess::ProcessState newState)
 {
-    switch (newState) {
+  std::cout << "[QProcessWrapper] Process stage changed!";
+
+  switch (newState) {
     case QProcess::NotRunning: {
+        std::cout << "[QProcessWrapper] Process is now NotRunning";
         break;
-    }
+      }
     case QProcess::Starting: {
+        std::cout << "[QProcessWrapper] Process is now Starting";
         break;
-    }
+      }
     case QProcess::Running: {
+        std::cout << "[QProcessWrapper] Process is now Running";
         break;
-    }
+      }
     default:
-        break;
+      break;
     }
 }
 
 void QProcessWrapper::errorMessageBox(QString error)
 {
-    qDebug() << "Error: " << error << "\n";
+  std::cout << "Error: " << error.toStdString() << std::endl;
 }
